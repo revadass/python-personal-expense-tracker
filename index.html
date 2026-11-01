@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Personal Expense Tracker</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#182033;--muted:#697386;--accent:#635bdb;--green:#15966b;--red:#d64b58}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px Arial,sans-serif}
+header{background:linear-gradient(120deg,#5148c8,#8279ef);color:white;padding:28px 18px}
+.wrap{max-width:1000px;margin:auto;padding:0 16px}h1{margin:0 0 7px;font-size:28px}header p{margin:0;opacity:.9}
+main{padding:22px 0 40px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.card{background:var(--card);padding:18px;border-radius:14px;box-shadow:0 4px 18px #1b24500d}
+.stat small{color:var(--muted)}.stat strong{display:block;font-size:25px;margin-top:8px}.green{color:var(--green)}.red{color:var(--red)}
+.layout{display:grid;grid-template-columns:320px 1fr;gap:16px}.card h2{font-size:18px;margin:0 0 15px}
+label{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px}
+input,select{width:100%;padding:11px;border:1px solid #dce1eb;border-radius:9px;font-size:14px;background:white}
+button{border:0;border-radius:9px;padding:11px 14px;background:var(--accent);color:white;font-weight:600;cursor:pointer}
+button:hover{filter:brightness(.95)}.full{width:100%;margin-top:15px}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:12px 8px;border-bottom:1px solid #edf0f5;font-size:14px}th{color:var(--muted);font-size:12px}
+.delete{background:#fff0f1;color:var(--red);padding:7px 9px}.empty{text-align:center;color:var(--muted);padding:25px}
+.note{font-size:12px;color:var(--muted);margin-top:14px}
+@media(max-width:700px){.stats{grid-template-columns:1fr}.layout{grid-template-columns:1fr}h1{font-size:24px}table{font-size:12px}th,td{padding:10px 5px}}
+</style></head>
+<body>
+<header><div class="wrap"><h1>Personal Expense Tracker</h1><p>Track your income, expenses and balance in one simple place.</p></div></header>
+<main class="wrap">
+<section class="stats">
+<div class="card stat"><small>Total Income</small><strong class="green" id="income">₹0.00</strong></div>
+<div class="card stat"><small>Total Expenses</small><strong class="red" id="expenses">₹0.00</strong></div>
+<div class="card stat"><small>Available Balance</small><strong id="balance">₹0.00</strong></div>
+</section>
+<div class="layout">
+<section class="card"><h2>Add a Transaction</h2>
+<form id="form">
+<label for="title">Description</label><input id="title" placeholder="e.g. Grocery shopping" required maxlength="45">
+<label for="amount">Amount (₹)</label><input id="amount" type="number" min="0.01" step="0.01" placeholder="Enter amount" required>
+<label for="type">Transaction Type</label><select id="type"><option value="expense">Expense</option><option value="income">Income</option></select>
+<label for="date">Date</label><input id="date" type="date" required>
+<button class="full" type="submit">Add Transaction</button>
+</form><p class="note">Demo data is saved in this browser on this device.</p>
+</section>
+<section class="card"><h2>Transaction History</h2><div style="overflow-x:auto"><table><thead><tr><th>Description</th><th>Date</th><th>Type</th><th>Amount</th><th></th></tr></thead><tbody id="rows"></tbody></table></div><div id="empty" class="empty">No transactions yet. Add one to get started.</div></section>
+</div></main>
+<script>
+const $=id=>document.getElementById(id);
+let items=JSON.parse(localStorage.getItem('expenseDemoItems')||'[]');
+$('date').value=new Date().toISOString().slice(0,10);
+const money=n=>'₹'+Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+function render(){
+ const inc=items.filter(x=>x.type==='income').reduce((s,x)=>s+x.amount,0);
+ const exp=items.filter(x=>x.type==='expense').reduce((s,x)=>s+x.amount,0);
+ $('income').textContent=money(inc);$('expenses').textContent=money(exp);$('balance').textContent=money(inc-exp);
+ $('balance').className=inc-exp<0?'red':'green';
+ $('rows').innerHTML=items.slice().reverse().map(x=>`<tr><td>${escapeHtml(x.title)}</td><td>${x.date}</td><td>${x.type==='income'?'Income':'Expense'}</td><td class="${x.type==='income'?'green':'red'}">${x.type==='income'?'+':'−'}${money(x.amount)}</td><td><button class="delete" onclick="removeItem('${x.id}')">Delete</button></td></tr>`).join('');
+ $('empty').style.display=items.length?'none':'block';$('rows').style.display=items.length?'table-row-group':'none';
+ localStorage.setItem('expenseDemoItems',JSON.stringify(items));
+}
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function removeItem(id){items=items.filter(x=>x.id!==id);render();}
+$('form').addEventListener('submit',e=>{e.preventDefault();items.push({id:String(Date.now()),title:$('title').value.trim(),amount:Number($('amount').value),type:$('type').value,date:$('date').value});$('form').reset();$('date').value=new Date().toISOString().slice(0,10);render();});
+render();
+</script></body></html>
